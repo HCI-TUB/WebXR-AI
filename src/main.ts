@@ -11,6 +11,8 @@ import { setupSession } from "./xrsession.ts";
 import AFRAME from "aframe";
 import "aframe-extras";
 
+import { Mistral } from "@mistralai/mistralai";
+
 // declare global {
 //   interface Window {
 //     THREE: typeof THREE;

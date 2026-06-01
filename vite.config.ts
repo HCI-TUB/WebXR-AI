@@ -3,4 +3,5 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default {
   plugins: [basicSsl(), tailwindcss()],
+  base: "WebXR-AI",
 };
