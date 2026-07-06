@@ -1,3 +1,5 @@
+import AFRAME from "aframe";
+
 export function setupEventListeners() {
   let stream: MediaStream | null = null;
 
@@ -12,9 +14,7 @@ export function setupEventListeners() {
   }
   initCamera();
 
-  document.addEventListener("keyup", async (event) => {
-    if (event.key !== "p") return;
-
+  async function handleKeyUp() {
     if (!stream) await initCamera();
     if (!stream) return;
 
@@ -90,5 +90,19 @@ export function setupEventListeners() {
         }
       }
     }
+  }
+
+  AFRAME.registerComponent("x-button-listener", {
+    init: function () {
+      const el: AFRAME.Entity = this.el;
+      el.addEventListener("xbuttondown", () => {
+        handleKeyUp();
+      });
+    },
+  });
+
+  document.addEventListener("keyup", (event) => {
+    if (event.key === "p") handleKeyUp();
+    return;
   });
 }
