@@ -14,29 +14,15 @@
         webxr="optionalFeatures: dom-overlay;
            overlayElement: #overlay"
       >
-        <!-- <a-entity auto-text-background position="0 0 -5">
-          <a-plane class="bg" color="#333" position="0 0 -0.01"> </a-plane>
+        <a-entity uikit-panel position="0 1.6 -2.5"> </a-entity>
+        <a-entity id="ai-container"> </a-entity>
 
-          <a-text
-            id="text"
-            class="label"
-            value="Hello World"
-            color="white"
-            align="center"
-          >
-          </a-text>
-        </a-entity> -->
-        <!-- <a-text
-          id="text"
-          position="0 0 -5"
-          width="5"
-          value="Now Interactable"
-          geometry="primitive:plane; width:10;"
-          material="color: red"
-          color="#4CC3D9"
-        ></a-text> -->
         <a-sky hide-on-enter-ar color="skyblue"></a-sky>
-        <a-entity x-button-listener meta-touch-controls="hand: left"></a-entity>
+        <a-entity
+          x-button-listener
+          y-button-listener
+          meta-touch-controls="hand: left"
+        ></a-entity>
         <a-entity meta-touch-controls="hand: right"></a-entity>
       </a-scene>
     </div>

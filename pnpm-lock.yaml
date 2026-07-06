@@ -11,6 +11,12 @@ importers:
       '@mistralai/mistralai':
         specifier: ^2.2.5
         version: 2.2.5
+      '@pmndrs/pointer-events':
+        specifier: ^6.6.30
+        version: 6.6.30
+      '@pmndrs/uikit':
+        specifier: ^1.0.74
+        version: 1.0.74(three@0.184.0)
       '@sparkjsdev/spark':
         specifier: ^2.1.0
         version: 2.1.0(three@0.184.0)
@@ -29,6 +35,9 @@ importers:
       tailwindcss:
         specifier: ^4.3.0
         version: 4.3.0
+      volkswagen:
+        specifier: ^1.4.2
+        version: 1.4.2
       webxr-polyfill:
         specifier: ^2.0.3
         version: 2.0.3
@@ -158,6 +167,23 @@ packages:
 
   '@oxc-project/types@0.133.0':
     resolution: {integrity: sha512-KzkdCd6Uxqnf6l3HOw1xfatAlUURA0g14cvBYFyJ5SaNOQbOUvBr9PKArcPcrNIeRsBdgcUzOGrhKveVpvOIGA==}
+
+  '@pmndrs/msdfonts@1.0.74':
+    resolution: {integrity: sha512-cRMUq0RhvszDe4JfEZ8O8ZnZfZc0PsuiiMvwSb7CvFAQ156riCr1AueBvf4NEvLXHvBO7ZEMmgdODLSdEgg/HA==}
+
+  '@pmndrs/pointer-events@6.6.30':
+    resolution: {integrity: sha512-YD2jWdgEqqAWJNOOZ1WZMunUby8jwuQyOMk8zbeqC39R4nkZnGvu1Pa5EMGbV1zd2vZTxXDxYcAVxtQuhVwf3g==}
+
+  '@pmndrs/uikit-pub-sub@1.0.74':
+    resolution: {integrity: sha512-piiYQX/hjuXzTwBAjGbWqycEZsMFlsCKxoczs6G7M7kPWWmfLuFf9woOXHLtW5x6cnJJ19YrNuaQDtzG3SXj3Q==}
+
+  '@pmndrs/uikit@1.0.74':
+    resolution: {integrity: sha512-GF7Uwqile6UnbXQPXpbB9hkDSXJA2d0P3Vv33kLom4Q57JqCPoGGsjy4CzjsZlZwXb1riIUpu5CN5xnBtpPkmQ==}
+    peerDependencies:
+      three: '>=0.162'
+
+  '@preact/signals-core@1.14.3':
+    resolution: {integrity: sha512-m0K3vnbSLC5rHs2ZVfeAMvBtT1zIyq4mxx5OlNncSgMj5Iz6W5Rn3kPrDxAC+iIKmiVe0lSl6U37t5ZkEWoVAw==}
 
   '@rolldown/binding-android-arm64@1.0.3':
     resolution: {integrity: sha512-454rs7jHngixp/NMxd5srYD57OnzSlZ/eFTETjORQHLwJG1lRtmNOJcBerZlfu4GjKqeq8aCCIQrMdHyhI51Hw==}
@@ -468,6 +494,10 @@ packages:
     peerDependencies:
       vite: ^6.0.0 || ^7.0.0 || ^8.0.0
 
+  '@zappar/msdf-generator@1.2.4':
+    resolution: {integrity: sha512-6S/MCk0Ky0ipewZJw4xFEzH/2aYfWmPXEkTdBtNyDDfkbicrNwgJgtxZ4SnTDyNe9XHMqDA4sL9srRsgDLRMqA==}
+    engines: {node: '>=18'}
+
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
     peerDependencies:
@@ -526,8 +556,14 @@ packages:
   centra@2.7.0:
     resolution: {integrity: sha512-PbFMgMSrmgx6uxCdm57RUos9Tc3fclMvhLSATYN39XsDV29B89zZ3KA89jmY0vwSGazyU+uerqwa6t+KaodPcg==}
 
+  ci-info@1.6.0:
+    resolution: {integrity: sha512-vsGdkwSCDpWmP80ncATX7iea5DWQemg1UgCW5J8tqjU3lYw4FBYuj89J0CTVomA7BEfvSZd84GmHko+MxFQU2A==}
+
   clone-response@1.0.3:
     resolution: {integrity: sha512-ROoL94jJH2dUVML2Y/5PEDNaSHgeOdSDicUyS7izcF63G6sTc/FTjLub4b8Il9S8S0beOfYt0TaA5qvFK+w0wA==}
+
+  comlink@4.4.2:
+    resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -569,6 +605,9 @@ packages:
 
   duplexer3@0.1.5:
     resolution: {integrity: sha512-1A8za6ws41LQgv9HrE/66jyC5yuSjQ3L/KOpFtoBilsAK2iA2wuS5rTt1OCzIvtS2V7nVmedsUU+DGRcjBmOYA==}
+
+  emitter-listener@1.1.2:
+    resolution: {integrity: sha512-Bt1sBAGFHY9DKY+4/2cV6izcKJUf5T7/gkdmkxzX/qv9CcGH8xSwVRW5mtX03SWJtRTWSOpzCuWN9rBFYZepZQ==}
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -721,6 +760,10 @@ packages:
 
   is-buffer@1.1.6:
     resolution: {integrity: sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==}
+
+  is-ci@1.2.1:
+    resolution: {integrity: sha512-s6tfsaQaQi3JNciBH6shVqEDvhGut0SUXr31ag8Pd8BBbVVlcGfWhpPmEOoM6RJ5TFhbypvf5yyRw/VXW1IiWg==}
+    hasBin: true
 
   is-extglob@2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
@@ -886,6 +929,9 @@ packages:
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
+  mockery@1.7.0:
+    resolution: {integrity: sha512-gUQA33ayi0tuAhr/rJNZPr7Q7uvlBt4gyJPbi0CDcAfIzIrDu1YgGMFgmAu3stJqBpK57m7+RxUbcS+pt59fKQ==}
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -1019,6 +1065,9 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
+  shimmer@1.2.1:
+    resolution: {integrity: sha512-sQTKC1Re/rM6XyFM6fIAGHRPVGvyXfgzIDvzoq608vM+jeyVD0Tu1E6Np0Kc2zAIFWIj963V2800iF/9LPieQw==}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -1137,6 +1186,9 @@ packages:
       yaml:
         optional: true
 
+  volkswagen@1.4.2:
+    resolution: {integrity: sha512-DtmcMoC1nobkbmw2m28gsntPELeE+V6xSBr7Tkm4FSdlCWnqE2UBw7j28bb2BIOOw6g9AdTwnJZkby9J98Hlag==}
+
   webvr-polyfill-dpdb@1.0.18:
     resolution: {integrity: sha512-O0S1ZGEWyPvyZEkS2VbyV7mtir/NM9MNK3EuhbHPoJ8EHTky2pTXehjIl+IiDPr+Lldgx129QGt3NGly7rwRPw==}
 
@@ -1191,6 +1243,9 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  yoga-layout@3.2.1:
+    resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
 
   zod-to-json-schema@3.25.2:
     resolution: {integrity: sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==}
@@ -1306,6 +1361,26 @@ snapshots:
     optional: true
 
   '@oxc-project/types@0.133.0': {}
+
+  '@pmndrs/msdfonts@1.0.74': {}
+
+  '@pmndrs/pointer-events@6.6.30': {}
+
+  '@pmndrs/uikit-pub-sub@1.0.74':
+    dependencies:
+      '@preact/signals-core': 1.14.3
+
+  '@pmndrs/uikit@1.0.74(three@0.184.0)':
+    dependencies:
+      '@pmndrs/msdfonts': 1.0.74
+      '@pmndrs/uikit-pub-sub': 1.0.74
+      '@preact/signals-core': 1.14.3
+      '@zappar/msdf-generator': 1.2.4
+      three: 0.184.0
+      yoga-layout: 3.2.1
+      zod: 4.4.3
+
+  '@preact/signals-core@1.14.3': {}
 
   '@rolldown/binding-android-arm64@1.0.3':
     optional: true
@@ -1577,6 +1652,10 @@ snapshots:
     dependencies:
       vite: 8.0.16(@types/node@25.9.2)(jiti@2.7.0)
 
+  '@zappar/msdf-generator@1.2.4':
+    dependencies:
+      comlink: 4.4.2
+
   acorn-jsx@5.3.2(acorn@8.16.0):
     dependencies:
       acorn: 8.16.0
@@ -1651,9 +1730,13 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  ci-info@1.6.0: {}
+
   clone-response@1.0.3:
     dependencies:
       mimic-response: 1.0.1
+
+  comlink@4.4.2: {}
 
   cross-spawn@7.0.6:
     dependencies:
@@ -1684,6 +1767,10 @@ snapshots:
   dtype@2.0.0: {}
 
   duplexer3@0.1.5: {}
+
+  emitter-listener@1.1.2:
+    dependencies:
+      shimmer: 1.2.1
 
   end-of-stream@1.4.5:
     dependencies:
@@ -1848,6 +1935,10 @@ snapshots:
 
   is-buffer@1.1.6: {}
 
+  is-ci@1.2.1:
+    dependencies:
+      ci-info: 1.6.0
+
   is-extglob@2.1.1: {}
 
   is-function@1.0.2: {}
@@ -1983,6 +2074,8 @@ snapshots:
 
   minimist@1.2.8: {}
 
+  mockery@1.7.0: {}
+
   ms@2.1.3: {}
 
   nanoid@3.3.12: {}
@@ -2116,6 +2209,8 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
+  shimmer@1.2.1: {}
+
   source-map-js@1.2.1: {}
 
   super-animejs@3.1.0: {}
@@ -2194,6 +2289,12 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
 
+  volkswagen@1.4.2:
+    dependencies:
+      emitter-listener: 1.1.2
+      is-ci: 1.2.1
+      mockery: 1.7.0
+
   webvr-polyfill-dpdb@1.0.18: {}
 
   webxr-polyfill@2.0.3:
@@ -2232,6 +2333,8 @@ snapshots:
   xtend@4.0.2: {}
 
   yocto-queue@0.1.0: {}
+
+  yoga-layout@3.2.1: {}
 
   zod-to-json-schema@3.25.2(zod@4.4.3):
     dependencies:

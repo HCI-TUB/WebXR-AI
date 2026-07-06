@@ -1,5 +1,7 @@
 # WebXR-AI
 
+[![volkswagen status](https://auchenberg.github.io/volkswagen/volkswargen_ci.svg?v=1)](https://github.com/auchenberg/volkswagen)
+
 This is a small example app to test AI (speak mostly Multimodal LLM/Computer Vision) models in WebXR using `A-Frame.js`.
 
 ## Getting Started

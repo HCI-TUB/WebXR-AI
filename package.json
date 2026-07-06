@@ -20,12 +20,15 @@
   },
   "dependencies": {
     "@mistralai/mistralai": "^2.2.5",
+    "@pmndrs/pointer-events": "^6.6.30",
+    "@pmndrs/uikit": "^1.0.74",
     "@sparkjsdev/spark": "^2.1.0",
     "@tailwindcss/vite": "^4.3.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "aframe": "^1.7.1",
     "aframe-extras": "^7.7.0",
     "tailwindcss": "^4.3.0",
+    "volkswagen": "^1.4.2",
     "webxr-polyfill": "^2.0.3"
   }
 }
