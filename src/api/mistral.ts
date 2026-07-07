@@ -1,14 +1,15 @@
 // Thin client for the Mistral REST API used by the app: audio transcription
 // (Voxtral) and chat completions — streaming for the vision Q&A flow, plain
-// (non-streaming) for the object-generation flow. The API key is read from
-// VITE_MISTRAL_API_KEY at build time (see CLAUDE.md > Required environment).
+// (non-streaming) for the object-generation flow. Requests go to the same-origin
+// /api/mistral path; the Vite dev-server proxy rewrites that to api.mistral.ai
+// and injects the Authorization header, so the API key never ships to the client
+// (see vite.config.ts and CLAUDE.md > Required environment).
 //
 // Why the offline transcription POST, not realtime Voxtral: browsers can't set
 // the Authorization header the realtime WebSocket needs (verified), so the WS
-// is out; a plain fetch with the header works client-side with no proxy.
+// is out; a plain fetch (proxied server-side for the header) works client-side.
 
-const API_BASE = "https://api.mistral.ai/v1";
-const AUTH = `Bearer ${import.meta.env.VITE_MISTRAL_API_KEY}`;
+const API_BASE = "/api/mistral";
 
 // Model ids. The `-latest` aliases track Mistral's newest release in each
 // family, so these stay current without code changes.
@@ -32,7 +33,6 @@ export async function transcribe(blob: Blob): Promise<string> {
 
   const res = await fetch(`${API_BASE}/audio/transcriptions`, {
     method: "POST",
-    headers: { Authorization: AUTH },
     body: form,
   });
   if (!res.ok) {
@@ -51,7 +51,7 @@ export async function chat(
 ): Promise<string> {
   const res = await fetch(`${API_BASE}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: AUTH },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
   });
   if (!res.ok) {
@@ -75,7 +75,7 @@ export async function streamChat(
 ): Promise<string> {
   const res = await fetch(`${API_BASE}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: AUTH },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, messages, max_tokens: maxTokens, stream: true }),
   });
 

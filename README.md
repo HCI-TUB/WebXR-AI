@@ -22,7 +22,7 @@ How to do this depends on your OS.
 On macOS or Linux you can do it like so:
 
 ```
-export VITE_MISTRAL_API_KEY=YOUR_KEY_HERE
+export MISTRAL_API_KEY=YOUR_KEY_HERE
 ```
 
 To make it permanent, add that line to your `.zshrc` (or `.bashrc` if using bash).

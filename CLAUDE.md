@@ -20,9 +20,13 @@ There is **no test suite**.
 
 ### Required environment
 
-The Mistral API key must be provided as a Vite env var before running: `export VITE_MISTRAL_API_KEY=...`. It is read via `import.meta.env.VITE_MISTRAL_API_KEY`. Without it, the LLM calls fail.
+The Mistral API key must be provided as an env var before running: `export MISTRAL_API_KEY=...`. It is read in `vite.config.ts` via `process.env.MISTRAL_API_KEY` and injected server-side by the dev-server proxy (see below) — it is **not** exposed to the client, so no `VITE_` prefix. Without it, the LLM calls fail.
 
-The **Detect** flow additionally needs a Google Cloud Vision API key: `export VITE_GOOGLE_CLOUD_VISION_API_KEY=...` (read via `import.meta.env.VITE_GOOGLE_CLOUD_VISION_API_KEY`). The key must have the Cloud Vision API enabled; restrict it to that API and your origin. Without it, object detection fails (the other flows still work).
+The **Detect** flow additionally needs a Google Cloud Vision API key: `export GOOGLE_CLOUD_VISION_API_KEY=...` (read via `process.env.GOOGLE_CLOUD_VISION_API_KEY`, also injected by the proxy). The key must have the Cloud Vision API enabled; restrict it to that API and your origin. Without it, object detection fails (the other flows still work).
+
+### Credential proxy (dev only)
+
+The Mistral and Google Vision clients hit **same-origin `/api/mistral/*` and `/api/vision/*`** paths. The Vite dev-server `proxy` (in `vite.config.ts`) rewrites these to the real endpoints and injects the credentials server-side (Mistral via the `Authorization` header; Vision via the `?key=` query param), so the API keys stay in the Node process and never ship to the client bundle. `server.proxy` only runs under `pnpm run dev` — a production `vite build` is served statically with no server to inject keys, so production would need a real backend (serverless function, etc.).
 
 ### HTTPS / camera
 

@@ -3,13 +3,12 @@
 // image space; src/interactions/detection.ts projects those into world-space
 // frames.
 //
-// Auth mirrors the Mistral client (src/api/mistral.ts): a browser API key read
-// from VITE_GOOGLE_CLOUD_VISION_API_KEY, passed as the ?key= query param. The
-// key must have the Vision API enabled (restrict it to that API + your origin).
-// The images:annotate endpoint supports CORS, so no proxy is needed.
+// Auth mirrors the Mistral client (src/api/mistral.ts): the request goes to the
+// same-origin /api/vision path and the Vite dev-server proxy rewrites it to
+// vision.googleapis.com and appends the ?key= param, so the API key never ships
+// to the client (see vite.config.ts). The key must have the Vision API enabled.
 
-const ANNOTATE_URL = "https://vision.googleapis.com/v1/images:annotate";
-const API_KEY = import.meta.env.VITE_GOOGLE_CLOUD_VISION_API_KEY;
+const ANNOTATE_URL = "/api/vision/images:annotate";
 
 // One object detection: its label, confidence, and the 4 corners of its
 // bounding box as normalized (0..1) image coordinates (x: left→right,
@@ -26,7 +25,7 @@ export interface Detection {
  * detected objects, or [] on error.
  */
 export async function localizeObjects(base64: string): Promise<Detection[]> {
-  const res = await fetch(`${ANNOTATE_URL}?key=${API_KEY}`, {
+  const res = await fetch(ANNOTATE_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
