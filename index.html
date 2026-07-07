@@ -11,8 +11,8 @@
       <a-scene
         xr-mode-ui="XRMode: ar"
         obb-collider="showColliders: false"
-        webxr="optionalFeatures: dom-overlay;
-           overlayElement: #overlay"
+        webxr="requiredFeatures: anchors,local-floor"
+        vr-mode-ui="enterAREnabled: true; enterVREnabled: false"
       >
         <a-entity uikit-panel position="0 1.6 -2.5"> </a-entity>
         <a-entity id="ai-container"> </a-entity>
@@ -23,7 +23,11 @@
           y-button-listener
           meta-touch-controls="hand: left"
         ></a-entity>
-        <a-entity meta-touch-controls="hand: right"></a-entity>
+        <a-entity
+          id="right-controller"
+          a-button-listener
+          meta-touch-controls="hand: right"
+        ></a-entity>
       </a-scene>
     </div>
     <script type="module" src="/src/main.ts"></script>

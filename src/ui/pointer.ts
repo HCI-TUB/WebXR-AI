@@ -19,6 +19,12 @@ export interface PointerInteraction {
 const now = () => ({ timeStamp: performance.now() });
 const click = () => ({ timeStamp: performance.now(), button: 0 });
 
+// Tilt the ray forward from the grip axis so it emits from the top of the
+// controller like the Quest system menu (raw -Z runs along the grip). Shared
+// with the object-placement preview (src/interactions/listeners.ts) so a spawned
+// object sits exactly at the end of the visible laser.
+export const RAY_PITCH_DEG = 35;
+
 export function initPointerInteraction(
   sceneEl: AFRAME.Scene,
   root: Object3D,
@@ -35,9 +41,8 @@ export function initPointerInteraction(
   updaters.push(html.update);
   disposers.push(html.destroy);
 
-  // Tilt the ray forward from the grip axis so it emits from the top of the
-  // controller like the Quest system menu (raw -Z runs along the grip).
-  const RAY_PITCH_DEG = 35;
+  // Tilt the ray forward from the grip axis (see RAY_PITCH_DEG above) so it
+  // emits from the top of the controller (raw -Z runs along the grip).
   const pitch = -(RAY_PITCH_DEG * Math.PI) / 180;
   // Direction after rotating -Z about X by `pitch`: (0, sin(pitch), -cos(pitch)).
   const LASER_LEN = 5;

@@ -1,4 +1,5 @@
 import AFRAME from "aframe";
+import type * as THREE from "three";
 import {
   setPanelText,
   setButtonHandler,
@@ -6,6 +7,7 @@ import {
   setButtonRecording,
 } from "../ui/uikit-panel.ts";
 import { createVoiceRecorder, type CaptureRequest } from "../voice/recorder.ts";
+import { RAY_PITCH_DEG } from "../ui/pointer.ts";
 import {
   chat,
   streamChat,
@@ -30,7 +32,7 @@ import {
 const OBJECT_SYSTEM_PROMPT = `You generate 3D objects for an A-Frame WebXR scene from a short spoken description.
 Reply with ONLY A-Frame entity markup (e.g. <a-box>, <a-sphere>, <a-cylinder>, <a-cone>, <a-torus>).
 Do NOT include prose, explanations, or markdown code fences.
-Place objects a couple of metres in front of the user (negative Z) around eye height (y ~1.6), with reasonable sizes and colors. You may combine several primitives.`;
+Center the object around the origin (position 0 0 0) at a modest, roughly hand-sized scale, with reasonable colors. Do NOT offset it in front of the user — placement in the scene is handled separately. You may combine several primitives, positioned relative to the origin.`;
 
 export function setupEventListeners() {
   const recorder = createVoiceRecorder();
@@ -106,10 +108,14 @@ export function setupEventListeners() {
     handleObjectResponse(prompt, markup);
   }
 
+  // The object currently being previewed on the right controller's ray, awaiting
+  // an A-button press to drop it into the scene. Only one is live at a time.
+  let activePreview: AFRAME.Entity | null = null;
+
   // Callback that receives the object model's response. This is the extension
   // point for turning a reply into scene content; for now it strips any stray
-  // code fences, injects the markup into the #ai-container entity (parsed by
-  // A-Frame's own super-three), and echoes the result to the panel.
+  // code fences, wraps the markup (parsed by A-Frame's own super-three) in a
+  // holder that rides the right controller's ray, and waits for the A button.
   function handleObjectResponse(prompt: string, response: string) {
     console.log("Object generation response:", response);
     if (!response) {
@@ -121,8 +127,31 @@ export function setupEventListeners() {
       .replace(/```/g, "")
       .trim();
     const container = document.querySelector("#ai-container");
-    if (container) container.innerHTML = markup;
-    setPanelText(`You: ${prompt}\n\nCreated:\n${markup}`);
+    if (!container) return;
+
+    // Replace any previous object (placed or still previewing). The holder is
+    // driven each frame by `placement-follow`; the generated markup sits at its
+    // origin, so it appears at the end of the ray until the A button drops it.
+    container.innerHTML = "";
+    const preview = document.createElement("a-entity");
+    preview.setAttribute("placement-follow", "");
+    preview.innerHTML = markup;
+    container.appendChild(preview);
+    activePreview = preview;
+
+    setPanelText(
+      `You: ${prompt}\n\nObject created. Aim with the right controller and press A to place it; push the thumbstick up/down to resize.`,
+    );
+  }
+
+  // Drop the previewed object where it currently sits: stop it following the ray
+  // (removing the component freezes the holder at its last transform). Wired to
+  // the right controller's A button below.
+  function placeObject() {
+    if (!activePreview) return;
+    activePreview.removeAttribute("placement-follow");
+    activePreview = null;
+    setPanelText("Object placed.");
   }
 
   // Each capture request pairs an action with the button whose state it drives,
@@ -165,6 +194,71 @@ export function setupEventListeners() {
         () => void recorder.start(createRequest),
       );
       el.addEventListener("ybuttonup", () => recorder.stop());
+    },
+  });
+
+  // Right controller A button: drop the object currently riding the ray.
+  AFRAME.registerComponent("a-button-listener", {
+    init: function () {
+      const el: AFRAME.Entity = this.el;
+      el.addEventListener("abuttondown", () => placeObject());
+    },
+  });
+
+  // Rides a spawned object at the end of the right controller's ray, a fixed
+  // distance out, until placed. The local direction matches the visible laser
+  // (pitched forward-and-down by RAY_PITCH_DEG, see src/ui/pointer.ts).
+  const PLACE_DISTANCE = 1.5; // metres down the ray
+  const pitch = -(RAY_PITCH_DEG * Math.PI) / 180;
+  // Thumbstick resize: per-second growth rate at full deflection, and bounds.
+  const SCALE_RATE = 1.5;
+  const MIN_SCALE = 0.1;
+  const MAX_SCALE = 10;
+  AFRAME.registerComponent("placement-follow", {
+    // Reused per frame; assigned real values in init.
+    localDir: null as unknown as THREE.Vector3,
+    origin: null as unknown as THREE.Vector3,
+    quat: null as unknown as THREE.Quaternion,
+    dir: null as unknown as THREE.Vector3,
+    controller: null as AFRAME.Entity | null,
+    scale: 1,
+    // Latest thumbstick Y (up is negative); held between events, driving resize.
+    thumbY: 0,
+    onThumbstick: null as unknown as (e: Event) => void,
+    init: function () {
+      const T = AFRAME.THREE;
+      // -Z pitched about X, matching the ray pointer / laser direction.
+      this.localDir = new T.Vector3(0, Math.sin(pitch), -Math.cos(pitch));
+      this.origin = new T.Vector3();
+      this.quat = new T.Quaternion();
+      this.dir = new T.Vector3();
+      this.controller = document.querySelector("#right-controller");
+      this.onThumbstick = (e) =>
+        (this.thumbY = (e as AFRAME.DetailEvent<{ y: number }>).detail.y);
+      this.controller?.addEventListener("thumbstickmoved", this.onThumbstick);
+    },
+    remove: function () {
+      this.controller?.removeEventListener("thumbstickmoved", this.onThumbstick);
+    },
+    tick: function (_time: number, timeDelta: number) {
+      const controller = this.controller;
+      if (!controller) return;
+      const obj = controller.object3D;
+      // #ai-container sits at the scene origin, so world coords double as the
+      // holder's local position.
+      obj.getWorldPosition(this.origin);
+      obj.getWorldQuaternion(this.quat);
+      this.dir.copy(this.localDir).applyQuaternion(this.quat);
+      this.el.object3D.position
+        .copy(this.origin)
+        .addScaledVector(this.dir, PLACE_DISTANCE);
+
+      // Push up (negative Y) to grow, down to shrink; framerate-independent.
+      if (this.thumbY) {
+        const factor = 1 + -this.thumbY * SCALE_RATE * (timeDelta / 1000);
+        this.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, this.scale * factor));
+        this.el.object3D.scale.setScalar(this.scale);
+      }
     },
   });
 
