@@ -7,6 +7,7 @@ import {
   setButtonRecording,
 } from "../ui/uikit-panel.ts";
 import { createVoiceRecorder, type CaptureRequest } from "../voice/recorder.ts";
+import { captureFrame } from "../camera.ts";
 import { RAY_PITCH_DEG } from "../ui/pointer.ts";
 import {
   chat,
@@ -37,18 +38,9 @@ Center the object around the origin (position 0 0 0) at a modest, roughly hand-s
 export function setupEventListeners() {
   const recorder = createVoiceRecorder();
 
-  let camStream: MediaStream | null = null;
-
-  async function initCamera() {
-    try {
-      camStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-    } catch (err) {
-      console.error("Camera error:", err);
-    }
-  }
-  initCamera();
+  // Warm up the shared environment camera so the first Ask/Detect has a stream
+  // ready (see src/camera.ts).
+  void captureFrame();
 
   // --- Action: ask about what the camera sees (vision Q&A) ---
   async function askWithPhoto(prompt: string) {
@@ -56,27 +48,12 @@ export function setupEventListeners() {
     // clearly distinct, with a blank line between them.
     const header = `You: ${prompt}\n\nAI: `;
 
-    if (!camStream) await initCamera();
-    if (!camStream) {
+    const frame = await captureFrame();
+    if (!frame) {
       setPanelText(`${header}(Camera unavailable — can't send a photo.)`);
       return;
     }
-
-    const video = document.createElement("video");
-    video.srcObject = camStream;
-    await new Promise((r) => (video.onloadeddata = r));
-    await video.play().catch(() => {});
-
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      setPanelText(`${header}(Couldn't capture a frame.)`);
-      return;
-    }
-    ctx.drawImage(video, 0, 0);
-    const base64Image = canvas.toDataURL("image/png").split(",")[1];
+    const base64Image = frame.base64;
 
     setPanelText(`${header}Thinking…`);
 
