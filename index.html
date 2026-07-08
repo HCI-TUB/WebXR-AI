@@ -11,7 +11,8 @@
       <a-scene
         xr-mode-ui="XRMode: ar"
         obb-collider="showColliders: false"
-        webxr="requiredFeatures: anchors,local-floor"
+        webxr="requiredFeatures: anchors,local-floor; optionalFeatures: bounded-floor,depth-sensing"
+        xr-depth-sensing
         vr-mode-ui="enterAREnabled: true; enterVREnabled: false"
       >
         <a-entity uikit-panel position="0 1.6 -2.5"> </a-entity>

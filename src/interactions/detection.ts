@@ -2,6 +2,11 @@ import AFRAME from "aframe";
 import type * as THREE from "three";
 import { captureFrame } from "../camera.ts";
 import { localizeObjects, type Detection } from "../api/vision.ts";
+import {
+  captureDepthSnapshot,
+  sampleDepthMeters,
+  type DepthSnapshot,
+} from "../xr/depth-sensing.ts";
 import { setPanelText } from "../ui/uikit-panel.ts";
 
 // "Detect" flow (third flow after Ask / Create): press the right controller's
@@ -19,12 +24,14 @@ import { setPanelText } from "../ui/uikit-panel.ts";
 //     model is mutable module state so calibration tunes it live; once aligned,
 //     bake the printed values into the defaults.
 //
-//  2. No depth. Vision gives a 2D box only. We place each frame as a billboard
-//     at a fixed distance (FRAME_DISTANCE), built from the box's four corner
-//     rays, anchored to the head pose *remembered from capture time* — so it
-//     overlays the real object from the viewpoint the photo was taken, even if
-//     the user has moved by the time the response arrives. Parallax error from
-//     other viewpoints is inherent without depth.
+//  2. Depth. Vision gives a 2D box only. On devices with WebXR depth sensing we
+//     sample the real distance to each box's centre (src/xr/depth-sensing.ts) and
+//     place that frame there; without it (or where the depth map has no reading)
+//     we fall back to a fixed distance (FRAME_DISTANCE). Either way the frame is a
+//     billboard built from the box's four corner rays, anchored to the head pose
+//     *remembered from capture time* — so it overlays the real object from the
+//     viewpoint the photo was taken, even if the user has moved by the time the
+//     response arrives. Parallax error from other viewpoints is inherent.
 //
 // All THREE objects here are built with AFRAME.THREE (super-three) and added via
 // object3D.add — never setObject3D — per the uikit/A-Frame rules in CLAUDE.md.
@@ -40,7 +47,9 @@ const CAMERA_MODEL = {
   pitchOffsetDeg: -10.8, // (+ = up)
 };
 
-const FRAME_DISTANCE = 2; // metres along each ray where frames/overlay sit
+// Fallback distance (metres) along each ray where a frame sits when depth sensing
+// gives no reading; also the fixed distance for the calibration overlay.
+const FRAME_DISTANCE = 2;
 const DEG = Math.PI / 180;
 
 // Thumbstick tuning rates (per second at full deflection) and a deadzone.
@@ -56,6 +65,19 @@ interface Capture {
   quat: THREE.Quaternion;
 }
 let lastCapture: Capture | null = null;
+
+/** A Vision detection paired with its estimated distance from the capture point. */
+export interface DetectedObject {
+  detection: Detection;
+  /** Distance in metres from WebXR depth sensing, or null when unavailable. */
+  depth: number | null;
+}
+
+/** Everything the Detect flow produces: the objects plus the capture they anchor to. */
+export interface DetectionResult {
+  objects: DetectedObject[];
+  capture: Capture;
+}
 
 // Lazily-created THREE scratch/state (AFRAME.THREE is only safe post-import).
 let T: typeof THREE;
@@ -126,8 +148,9 @@ function clearVisuals() {
   labels = [];
 }
 
-// Draw a wireframe frame + label for each detection, anchored to `cap`.
-function renderFrames(detections: Detection[], cap: Capture) {
+// Draw a wireframe frame + label for each detected object, anchored to `cap`. Each
+// frame sits at the object's measured depth (or FRAME_DISTANCE if depth is null).
+function renderFrames(objects: DetectedObject[], cap: Capture) {
   const el = container();
   if (!el) return;
   ensureThree();
@@ -141,16 +164,16 @@ function renderFrames(detections: Detection[], cap: Capture) {
   // "Up" of the capture frame, so labels roll with the box, not world-up.
   _up.set(0, 1, 0).applyQuaternion(cap.quat);
 
-  for (const det of detections) {
+  for (const obj of objects) {
+    const det = obj.detection;
     if (det.corners.length < 3) continue;
+    const dist = obj.depth ?? FRAME_DISTANCE;
 
-    // Each box corner ray, placed at FRAME_DISTANCE — the corners lie on a
+    // Each box corner ray, placed at the object's distance — the corners lie on a
     // sphere around the capture point, matching the object's silhouette.
     const points = det.corners.map((c) => {
       projectRay(c.x, c.y, cap.quat, _dir);
-      return new T.Vector3()
-        .copy(cap.pos)
-        .addScaledVector(_dir, FRAME_DISTANCE);
+      return new T.Vector3().copy(cap.pos).addScaledVector(_dir, dist);
     });
     const geom = new T.BufferGeometry().setFromPoints(points);
     const mat = new T.LineBasicMaterial({ color: 0x89b4fa });
@@ -163,9 +186,10 @@ function renderFrames(detections: Detection[], cap: Capture) {
     const centre = new T.Vector3();
     points.forEach((p) => centre.add(p));
     centre.multiplyScalar(1 / points.length);
+    const depthLabel = obj.depth != null ? ` ${obj.depth.toFixed(1)}m` : "";
     const label = document.createElement("a-entity");
     label.setAttribute("text", {
-      value: `${det.name} ${(det.score * 100) | 0}%`,
+      value: `${det.name} ${(det.score * 100) | 0}%${depthLabel}`,
       align: "center",
       color: "#89b4fa",
       width: 1.5,
@@ -180,11 +204,43 @@ function renderFrames(detections: Detection[], cap: Capture) {
   }
 }
 
-// --- Detect flow: capture + snapshot pose → Vision → frames ---
-async function runDetect(sceneEl: AFRAME.Scene) {
-  ensureThree();
-  setPanelText("Detecting objects…");
+// Estimate the distance to a detection by sampling the depth snapshot along the ray
+// through the box centre. Returns null when there's no snapshot or no reading there.
+function estimateDepth(
+  det: Detection,
+  cap: Capture,
+  snap: DepthSnapshot | null,
+): number | null {
+  if (!snap || det.corners.length < 3) return null;
+  let u = 0;
+  let v = 0;
+  for (const c of det.corners) {
+    u += c.x;
+    v += c.y;
+  }
+  u /= det.corners.length;
+  v /= det.corners.length;
+  projectRay(u, v, cap.quat, _dir);
+  return sampleDepthMeters(snap, cap.pos, _dir);
+}
 
+/**
+ * The Detect flow's core, independent of any rendering: grab a camera frame + head
+ * pose (+ a WebXR depth snapshot when available), run Vision object localization,
+ * and return each detected object with its estimated depth. Returns null only when
+ * the camera is unavailable. Also updates `lastCapture` for the calibration overlay.
+ *
+ * Reusable on its own — e.g. to act on detected objects and their depth without
+ * drawing the wireframe frames.
+ */
+export async function detectObjects(
+  sceneEl: AFRAME.Scene,
+): Promise<DetectionResult | null> {
+  ensureThree();
+
+  // Kick off the (next-frame) depth snapshot alongside the photo so both are taken
+  // as close together as possible.
+  const depthPromise = captureDepthSnapshot();
   const frame = await captureFrame();
   // Snapshot the head pose as close as possible to the frame grab.
   const cam = sceneEl.camera as unknown as THREE.Camera;
@@ -193,21 +249,41 @@ async function runDetect(sceneEl: AFRAME.Scene) {
   cam.getWorldPosition(pos);
   cam.getWorldQuaternion(quat);
 
-  if (!frame) {
+  if (!frame) return null;
+  const capture: Capture = { base64: frame.base64, pos, quat };
+  lastCapture = capture;
+
+  const depthSnap = await depthPromise;
+  const detections = await localizeObjects(frame.base64);
+  const objects: DetectedObject[] = detections.map((det) => ({
+    detection: det,
+    depth: estimateDepth(det, capture, depthSnap),
+  }));
+  return { objects, capture };
+}
+
+// --- Detect flow: detect → draw frames + panel summary ---
+async function runDetect(sceneEl: AFRAME.Scene) {
+  setPanelText("Detecting objects…");
+
+  const result = await detectObjects(sceneEl);
+  if (!result) {
     setPanelText("Camera unavailable — can't detect.");
     return;
   }
-  lastCapture = { base64: frame.base64, pos, quat };
-
-  const detections = await localizeObjects(frame.base64);
-  if (detections.length === 0) {
+  if (result.objects.length === 0) {
     setPanelText("No objects detected.");
     clearVisuals();
     return;
   }
-  renderFrames(detections, lastCapture);
-  const names = detections.map((d) => d.name).join(", ");
-  setPanelText(`Detected ${detections.length}: ${names}`);
+
+  renderFrames(result.objects, result.capture);
+  const names = result.objects.map((o) => o.detection.name).join(", ");
+  const withDepth = result.objects.filter((o) => o.depth != null).length;
+  const depthNote = withDepth
+    ? ` — depth for ${withDepth}/${result.objects.length}`
+    : " — no depth";
+  setPanelText(`Detected ${result.objects.length}: ${names}${depthNote}`);
 }
 
 // --- Calibration overlay: pin the captured photo at FRAME_DISTANCE ---
