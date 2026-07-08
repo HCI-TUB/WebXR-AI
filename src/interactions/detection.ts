@@ -133,15 +133,28 @@ function projectRay(
   // Pinhole: image left→right is +x, top→bottom is -y, looking down -z.
   out.set((u - 0.5) * 2 * hx, (0.5 - v) * 2 * vy, -1).normalize();
   // Apply the axis offset, then the remembered head orientation.
-  _euler.set(CAMERA_MODEL.pitchOffsetDeg * DEG, CAMERA_MODEL.yawOffsetDeg * DEG, 0, "YXZ");
+  _euler.set(
+    CAMERA_MODEL.pitchOffsetDeg * DEG,
+    CAMERA_MODEL.yawOffsetDeg * DEG,
+    0,
+    "YXZ",
+  );
   _off.setFromEuler(_euler);
   return out.applyQuaternion(_off).applyQuaternion(quat);
 }
 
 // The full camera orientation (head + axis offset), used to face the overlay
 // and the labels back at the capture viewpoint. Writes into `out`.
-function cameraQuat(quat: THREE.Quaternion, out: THREE.Quaternion): THREE.Quaternion {
-  _euler.set(CAMERA_MODEL.pitchOffsetDeg * DEG, CAMERA_MODEL.yawOffsetDeg * DEG, 0, "YXZ");
+function cameraQuat(
+  quat: THREE.Quaternion,
+  out: THREE.Quaternion,
+): THREE.Quaternion {
+  _euler.set(
+    CAMERA_MODEL.pitchOffsetDeg * DEG,
+    CAMERA_MODEL.yawOffsetDeg * DEG,
+    0,
+    "YXZ",
+  );
   _off.setFromEuler(_euler);
   return out.copy(quat).multiply(_off);
 }
@@ -428,12 +441,20 @@ function tuneStep(
   const lx = dz(leftX);
   const ly = dz(leftY);
   if (rx) {
-    CAMERA_MODEL.hFovDeg = clamp(CAMERA_MODEL.hFovDeg + rx * FOV_RATE * dtSec, 10, 160);
+    CAMERA_MODEL.hFovDeg = clamp(
+      CAMERA_MODEL.hFovDeg + rx * FOV_RATE * dtSec,
+      10,
+      160,
+    );
     changed = true;
   }
   if (ry) {
     // Push up (negative Y) widens the vertical FOV.
-    CAMERA_MODEL.vFovDeg = clamp(CAMERA_MODEL.vFovDeg - ry * FOV_RATE * dtSec, 10, 160);
+    CAMERA_MODEL.vFovDeg = clamp(
+      CAMERA_MODEL.vFovDeg - ry * FOV_RATE * dtSec,
+      10,
+      160,
+    );
     changed = true;
   }
   if (lx) {

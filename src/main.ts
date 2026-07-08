@@ -2,6 +2,7 @@ import "./style.css";
 import { setupEventListeners } from "./interactions/listeners.ts";
 import { setupDetection } from "./interactions/detection.ts";
 import { setupPlacement } from "./interactions/placement.ts";
+import { setupSandbox } from "./interactions/sandbox.ts";
 import { setupDepthSensing } from "./xr/depth-sensing.ts";
 import { setupPanel } from "./ui/uikit-panel.ts";
 
@@ -11,6 +12,7 @@ setupEventListeners();
 setupDepthSensing();
 setupDetection();
 setupPlacement();
+setupSandbox();
 setupPanel();
 
 // The uikit panel entity (the shared output surface the LLM response streams
