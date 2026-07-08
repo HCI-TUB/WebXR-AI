@@ -18,11 +18,13 @@
         <a-entity uikit-panel position="0 1.6 -2.5"> </a-entity>
         <a-entity id="ai-container"> </a-entity>
         <a-entity id="detect-container"> </a-entity>
+        <a-entity id="place-container"> </a-entity>
 
         <a-sky hide-on-enter-ar color="skyblue"></a-sky>
         <a-entity
           x-button-listener
           y-button-listener
+          place-button-listener
           meta-touch-controls="hand: left"
         ></a-entity>
         <a-entity

@@ -6,16 +6,11 @@ import {
   setButtonLabel,
   setButtonRecording,
 } from "../ui/uikit-panel.ts";
-import { createVoiceRecorder, type CaptureRequest } from "../voice/recorder.ts";
+import { getVoiceRecorder, type CaptureRequest } from "../voice/recorder.ts";
 import { captureFrame } from "../camera.ts";
 import { RAY_PITCH_DEG } from "../ui/pointer.ts";
-import {
-  chat,
-  streamChat,
-  CHAT_MODEL,
-  OBJECT_MODEL,
-  type ChatMessage,
-} from "../api/mistral.ts";
+import { streamChat, CHAT_MODEL, type ChatMessage } from "../api/mistral.ts";
+import { generateObjectMarkup, buildObjectEntity } from "./objects.ts";
 
 // Two voice-driven flows share one record → transcribe path (src/recorder.ts):
 //
@@ -28,15 +23,8 @@ import {
 // A recording is transcribed only after the clip finishes, which matches the
 // hold-to-talk / record-then-send UX (see CLAUDE.md for the Voxtral rationale).
 
-// System prompt for the object-generation flow: turn a spoken description into
-// A-Frame entity markup we can drop straight into the scene.
-const OBJECT_SYSTEM_PROMPT = `You generate 3D objects for an A-Frame WebXR scene from a short spoken description.
-Reply with ONLY A-Frame entity markup (e.g. <a-box>, <a-sphere>, <a-cylinder>, <a-cone>, <a-torus>).
-Do NOT include prose, explanations, or markdown code fences.
-Center the object around the origin (position 0 0 0) at a modest, roughly hand-sized scale, with reasonable colors. Do NOT offset it in front of the user — placement in the scene is handled separately. You may combine several primitives, positioned relative to the origin.`;
-
 export function setupEventListeners() {
-  const recorder = createVoiceRecorder();
+  const recorder = getVoiceRecorder();
 
   // Warm up the shared environment camera so the first Ask/Detect has a stream
   // ready (see src/camera.ts).
@@ -75,13 +63,7 @@ export function setupEventListeners() {
   // --- Action: create a 3D object from the spoken prompt ---
   async function createObject(prompt: string) {
     setPanelText(`You: ${prompt}\n\nCreating an object…`);
-    const markup = await chat(
-      [
-        { role: "system", content: OBJECT_SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-      ],
-      OBJECT_MODEL,
-    );
+    const markup = await generateObjectMarkup(prompt);
     handleObjectResponse(prompt, markup);
   }
 
@@ -99,10 +81,6 @@ export function setupEventListeners() {
       setPanelText(`You: ${prompt}\n\n(No object was generated — try again.)`);
       return;
     }
-    const markup = response
-      .replace(/```[a-z]*\n?/gi, "")
-      .replace(/```/g, "")
-      .trim();
     const container = document.querySelector("#ai-container");
     if (!container) return;
 
@@ -110,9 +88,8 @@ export function setupEventListeners() {
     // driven each frame by `placement-follow`; the generated markup sits at its
     // origin, so it appears at the end of the ray until the A button drops it.
     container.innerHTML = "";
-    const preview = document.createElement("a-entity");
+    const preview = buildObjectEntity(response);
     preview.setAttribute("placement-follow", "");
-    preview.innerHTML = markup;
     container.appendChild(preview);
     activePreview = preview;
 

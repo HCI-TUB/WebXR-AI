@@ -126,3 +126,14 @@ export function createVoiceRecorder(): VoiceRecorder {
     },
   };
 }
+
+// The whole app shares one recorder so its single-flight `busy` guard serialises
+// every voice flow (Ask / Create / Place): a recording or its round-trip in one
+// flow blocks starting another, regardless of which trigger fired.
+let shared: VoiceRecorder | null = null;
+
+/** The shared, lazily-created voice recorder used by all voice-driven flows. */
+export function getVoiceRecorder(): VoiceRecorder {
+  if (!shared) shared = createVoiceRecorder();
+  return shared;
+}

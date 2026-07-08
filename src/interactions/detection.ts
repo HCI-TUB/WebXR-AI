@@ -52,6 +52,10 @@ const CAMERA_MODEL = {
 const FRAME_DISTANCE = 2;
 const DEG = Math.PI / 180;
 
+// How far (metres) the Place flow nudges a new object off its target for a
+// spatial relation ("in front of", "left of", …).
+const RELATION_OFFSET = 0.4;
+
 // Thumbstick tuning rates (per second at full deflection) and a deadzone.
 const FOV_RATE = 30;
 const OFFSET_RATE = 15;
@@ -59,7 +63,7 @@ const DEADZONE = 0.15;
 
 // The head pose snapshotted at the moment of capture, reused for every frame
 // and for the calibration overlay. Null until the first B press.
-interface Capture {
+export interface Capture {
   base64: string;
   pos: THREE.Vector3;
   quat: THREE.Quaternion;
@@ -92,6 +96,10 @@ let _off: THREE.Quaternion;
 let _euler: THREE.Euler;
 let _up: THREE.Vector3;
 let _lookM: THREE.Matrix4;
+// Scratch for placementPosition (relation offsets).
+let _pUp: THREE.Vector3;
+let _pFwd: THREE.Vector3;
+let _pRight: THREE.Vector3;
 
 function ensureThree() {
   if (T) return;
@@ -101,6 +109,9 @@ function ensureThree() {
   _euler = new T.Euler();
   _up = new T.Vector3();
   _lookM = new T.Matrix4();
+  _pUp = new T.Vector3();
+  _pFwd = new T.Vector3();
+  _pRight = new T.Vector3();
 }
 
 /** The scene-origin container that all detection visuals attach to. */
@@ -135,6 +146,70 @@ function cameraQuat(quat: THREE.Quaternion, out: THREE.Quaternion): THREE.Quater
   return out.copy(quat).multiply(_off);
 }
 
+// World-space positions of a detected box's corners, each corner ray placed at the
+// object's measured depth (or FRAME_DISTANCE when depth is null) — the corners lie
+// on a sphere around the capture point, matching the object's silhouette.
+function cornerPoints(obj: DetectedObject, cap: Capture): THREE.Vector3[] {
+  ensureThree();
+  const dist = obj.depth ?? FRAME_DISTANCE;
+  return obj.detection.corners.map((c) => {
+    projectRay(c.x, c.y, cap.quat, _dir);
+    return new T.Vector3().copy(cap.pos).addScaledVector(_dir, dist);
+  });
+}
+
+// Centre of a detected box in world space, at its measured depth. Returns a fresh
+// vector the caller is free to mutate.
+function objectCentre(obj: DetectedObject, cap: Capture): THREE.Vector3 {
+  const points = cornerPoints(obj, cap);
+  const centre = new T.Vector3();
+  points.forEach((p) => centre.add(p));
+  return centre.multiplyScalar(1 / (points.length || 1));
+}
+
+/**
+ * World position to drop a newly-created object at, given a detected target and a
+ * spatial relation ("in front of", "behind", "on"/"above", "below", "left of",
+ * "right of", "next to"). Starts at the target's centre and nudges it by a fixed
+ * offset resolved against the capture viewpoint (so "in front of" means between the
+ * target and where the user was standing). Used by the Place flow.
+ */
+export function placementPosition(
+  obj: DetectedObject,
+  cap: Capture,
+  relation: string,
+): THREE.Vector3 {
+  ensureThree();
+  const centre = objectCentre(obj, cap);
+  const up = _pUp.set(0, 1, 0);
+  // Horizontal direction from the target toward the capture viewpoint.
+  const toViewer = _pFwd.copy(cap.pos).sub(centre);
+  toViewer.y = 0;
+  if (toViewer.lengthSq() < 1e-6) toViewer.set(0, 0, 1);
+  else toViewer.normalize();
+  // "Right" from the viewer's perspective (looking at the target).
+  const right = _pRight.crossVectors(up, toViewer).normalize();
+
+  switch (relation) {
+    case "in front of":
+      return centre.addScaledVector(toViewer, RELATION_OFFSET);
+    case "behind":
+      return centre.addScaledVector(toViewer, -RELATION_OFFSET);
+    case "on":
+    case "above":
+      return centre.addScaledVector(up, RELATION_OFFSET);
+    case "below":
+      return centre.addScaledVector(up, -RELATION_OFFSET);
+    case "left of":
+      return centre.addScaledVector(right, -RELATION_OFFSET);
+    case "right of":
+      return centre.addScaledVector(right, RELATION_OFFSET);
+    case "next to":
+    default:
+      return centre.addScaledVector(right, RELATION_OFFSET);
+  }
+}
+
 function clearVisuals() {
   if (frameGroup) {
     for (const child of frameGroup.children.slice()) {
@@ -167,14 +242,9 @@ function renderFrames(objects: DetectedObject[], cap: Capture) {
   for (const obj of objects) {
     const det = obj.detection;
     if (det.corners.length < 3) continue;
-    const dist = obj.depth ?? FRAME_DISTANCE;
 
-    // Each box corner ray, placed at the object's distance — the corners lie on a
-    // sphere around the capture point, matching the object's silhouette.
-    const points = det.corners.map((c) => {
-      projectRay(c.x, c.y, cap.quat, _dir);
-      return new T.Vector3().copy(cap.pos).addScaledVector(_dir, dist);
-    });
+    // Each box corner ray, placed at the object's distance.
+    const points = cornerPoints(obj, cap);
     const geom = new T.BufferGeometry().setFromPoints(points);
     const mat = new T.LineBasicMaterial({ color: 0x89b4fa });
     frameGroup.add(new T.LineLoop(geom, mat));
