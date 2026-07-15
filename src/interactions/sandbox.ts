@@ -48,6 +48,8 @@ async function sendToMistral(transcript: string) {
   ];
   const reply = await chat(messages, CHAT_MODEL);
   setPanelText(`You: ${transcript}\n\nAI: ${reply}`);
+
+  // Do your stuff here
 }
 
 export function setupSandbox() {
