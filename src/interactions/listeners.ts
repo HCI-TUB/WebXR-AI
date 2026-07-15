@@ -30,6 +30,11 @@ export function setupEventListeners() {
   // ready (see src/camera.ts).
   void captureFrame();
 
+  // Warm up the mic now, on page load, so its permission prompt fires here
+  // rather than on the first record — requesting getUserMedia mid-session tears
+  // down the immersive XR session (see VoiceRecorder.warmUp).
+  void recorder.warmUp();
+
   // --- Action: ask about what the camera sees (vision Q&A) ---
   async function askWithPhoto(prompt: string) {
     // Label both halves so the transcribed prompt and the model's reply are

@@ -11,11 +11,15 @@ import { initPointerInteraction, type PointerInteraction } from "./pointer.ts";
 //   Attach with el.object3D.add(), NOT el.setObject3D() (instanceof guard).
 // - A Container is its own root: call root.update(dt) every frame in tick().
 
-// The panel's action buttons. Each id is addressed by the input layer to wire a
-// handler, retitle the button, and tint it while its flow is recording.
+// The panel's action buttons — one per app flow. Each id is addressed by the
+// input layer to wire a handler, retitle the button, and tint it while its flow
+// is recording. Order mirrors the flows in CLAUDE.md.
 const BUTTON_CONFIGS = [
-  { id: "ask", label: "Record" }, // vision Q&A: describe / answer about the view
+  { id: "ask", label: "Record" }, // vision Q&A: photo + spoken prompt
+  { id: "detect", label: "Detect" }, // object detection: frame what's in view
   { id: "create", label: "Create" }, // object generation: build a 3D object
+  { id: "place", label: "Place" }, // create + place an object by a real one
+  { id: "sandbox", label: "Sandbox" }, // scratch flow: spoken prompt → Mistral
 ] as const;
 
 type ButtonId = (typeof BUTTON_CONFIGS)[number]["id"];
@@ -143,11 +147,13 @@ export function setupPanel() {
           textAlign: "left",
         });
 
-        // A row of action buttons, one per BUTTON_CONFIGS entry.
+        // A row of action buttons, one per BUTTON_CONFIGS entry. Wraps to a
+        // second line so all five flows fit the panel width.
         const buttonRow = new Container({
           flexDirection: "row",
+          flexWrap: "wrap",
           flexShrink: 0,
-          gap: 16,
+          gap: 12,
         });
         const buttons: Record<string, { container: Container; label: Text }> =
           {};
@@ -155,8 +161,8 @@ export function setupPanel() {
           const container = new Container({
             onClick: () => buttonHandlers[cfg.id]?.(),
             cursor: "pointer",
-            paddingX: 28,
-            paddingY: 16,
+            paddingX: 22,
+            paddingY: 14,
             flexShrink: 0,
             borderRadius: 16,
             backgroundColor: THEME.title,
@@ -168,7 +174,7 @@ export function setupPanel() {
           });
           const label = new Text({
             text: cfg.label,
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: "bold",
             color: THEME.panelBg,
           });
@@ -195,7 +201,13 @@ export function setupPanel() {
         active = this;
 
         setPanelText(
-          "Hold 'X' (Quest) / 'P' (PC) — or tap Record — and speak to ask about your view. Hold 'Y' (Quest) / 'O' (PC) — or tap Create — to make a 3D object.",
+          [
+            "Record — hold X (Quest) / P (PC), or tap: ask about your view (photo + prompt).",
+            "Detect — B (Quest) / B (PC), or tap: frame the objects in view.",
+            "Create — hold Y (Quest) / O (PC), or tap: speak a 3D object into being.",
+            "Place — hold left grip (Quest) / L (PC), or tap: create an object and place it by a real one.",
+            "Sandbox — hold left trigger (Quest), or tap: scratch flow for a spoken prompt.",
+          ].join("\n\n"),
         );
       };
 

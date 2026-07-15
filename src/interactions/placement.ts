@@ -1,6 +1,11 @@
 import AFRAME from "aframe";
 import type * as THREE from "three";
-import { setPanelText } from "../ui/uikit-panel.ts";
+import {
+  setPanelText,
+  setButtonHandler,
+  setButtonLabel,
+  setButtonRecording,
+} from "../ui/uikit-panel.ts";
 import { getVoiceRecorder, type CaptureRequest } from "../voice/recorder.ts";
 import { chat, CHAT_MODEL, type ChatMessage } from "../api/mistral.ts";
 import {
@@ -133,6 +138,17 @@ export function setupPlacement() {
 
   const placeRequest = (sceneEl: AFRAME.Scene): CaptureRequest => ({
     onTranscript: (prompt) => runPlace(sceneEl, prompt),
+    // Drives the panel's Place button, so a tap started anywhere shows Stop / red.
+    onRecordingChange: (on) => {
+      setButtonRecording("place", on);
+      setButtonLabel("place", on ? "Stop" : "Place");
+    },
+  });
+
+  // Panel "Place" button toggles the flow against the live scene.
+  setButtonHandler("place", () => {
+    const sceneEl = document.querySelector("a-scene") as AFRAME.Scene | null;
+    if (sceneEl) recorder.toggle(placeRequest(sceneEl));
   });
 
   // Quest left controller: hold the grip to speak a placement instruction (X and

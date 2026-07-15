@@ -17,6 +17,13 @@ export interface CaptureRequest {
 }
 
 export interface VoiceRecorder {
+  /**
+   * Acquire the mic stream ahead of time so the permission prompt fires now
+   * rather than on the first record. Requesting getUserMedia mid-session tears
+   * down the immersive XR session, so this is called once on page load (mirrors
+   * the camera warm-up in setupEventListeners).
+   */
+  warmUp(): Promise<void>;
   start(req: CaptureRequest): Promise<void>;
   stop(): void;
   toggle(req: CaptureRequest): void;
@@ -118,6 +125,9 @@ export function createVoiceRecorder(): VoiceRecorder {
   }
 
   return {
+    async warmUp() {
+      await getMic();
+    },
     start,
     stop,
     toggle,

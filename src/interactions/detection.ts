@@ -7,7 +7,7 @@ import {
   sampleDepthMeters,
   type DepthSnapshot,
 } from "../xr/depth-sensing.ts";
-import { setPanelText } from "../ui/uikit-panel.ts";
+import { setPanelText, setButtonHandler } from "../ui/uikit-panel.ts";
 
 // "Detect" flow (third flow after Ask / Create): press the right controller's
 // B button to grab a camera frame, send it to Google Cloud Vision object
@@ -479,6 +479,14 @@ function clamp(n: number, lo: number, hi: number) {
 }
 
 export function setupDetection() {
+  // Panel "Detect" button: run detect against the live scene. Detect is not a
+  // voice flow (single momentary action, no transcript), so the button just
+  // fires — no Stop / recording state. The scene is queried at click time.
+  setButtonHandler("detect", () => {
+    const sceneEl = document.querySelector("a-scene") as AFRAME.Scene | null;
+    if (sceneEl) void runDetect(sceneEl);
+  });
+
   // The right controller's B button runs detect; its grip toggles calibration;
   // both thumbsticks tune the model while calibrating. Lives on #right-controller
   // (see index.html), matching the x-/y-/a-button-listener pattern.

@@ -1,7 +1,12 @@
 import AFRAME from "aframe";
 import { getVoiceRecorder, type CaptureRequest } from "../voice/recorder.ts";
 import { chat, CHAT_MODEL, type ChatMessage } from "../api/mistral.ts";
-import { setPanelText } from "../ui/uikit-panel.ts";
+import {
+  setPanelText,
+  setButtonHandler,
+  setButtonLabel,
+  setButtonRecording,
+} from "../ui/uikit-panel.ts";
 
 // Scratch flow: hold the Quest left-controller TRIGGER to record a spoken prompt;
 // on release it's transcribed and handed to `sendToMistral`, a stub that sends it
@@ -58,7 +63,15 @@ export function setupSandbox() {
   // Record while the trigger is held; transcribe on release, then send to Mistral.
   const sandboxRequest: CaptureRequest = {
     onTranscript: (transcript) => sendToMistral(transcript),
+    // Drives the panel's Sandbox button, so a tap shows Stop / red while recording.
+    onRecordingChange: (on) => {
+      setButtonRecording("sandbox", on);
+      setButtonLabel("sandbox", on ? "Stop" : "Sandbox");
+    },
   };
+
+  // Panel "Sandbox" button toggles the flow.
+  setButtonHandler("sandbox", () => recorder.toggle(sandboxRequest));
 
   // Quest left-controller trigger drives hold-to-talk. NOTE: the trigger is also
   // the uikit panel's click (src/ui/pointer.ts), so both fire — fine for now, but
